@@ -7,18 +7,24 @@ import (
 )
 
 type List struct {
-	ty      *Type
 	raw     json.RawMessage
 	decoded []interface{}
+}
+
+type MutableList struct {
+	*List
+	ty *Type
 }
 
 var _ sql.Scanner = &List{}
 var _ driver.Valuer = &List{}
 
-func NewList(ty *Type) *List {
-	return &List{
-		ty:      ty,
-		decoded: []interface{}{},
+func NewList(ty *Type) *MutableList {
+	return &MutableList{
+		ty: ty,
+		List: &List{
+			decoded: []interface{}{},
+		},
 	}
 }
 
@@ -42,6 +48,26 @@ func (l *List) encode() (_ json.RawMessage, er error) {
 	}
 
 	return l.raw, nil
+}
+
+func (l *List) AsUnsafe(ty *Type) *MutableList {
+	return &MutableList{
+		List: l,
+		ty:   ty,
+	}
+}
+
+func (l *List) As(ty *Type) (*MutableList, error) {
+	dec, er := l.decode()
+	if er != nil {
+		return nil, er
+	}
+
+	if !ty.IsValid(dec) {
+		return nil, ErrSchema
+	}
+
+	return l.AsUnsafe(ty), nil
 }
 
 func (l *List) Scan(src interface{}) error {
@@ -76,10 +102,6 @@ func (l *List) UnmarshalJSON(bs []byte) error {
 		return er
 	}
 
-	if !l.ty.IsValid(val) {
-		return ErrInvalidJsonType
-	}
-
 	// NOTE: We could set .raw here but since .decoded is set, the current
 	// implementation would just overwrite .raw. This could be made more
 	// efficient (by storing both until the next .decode is called) but
@@ -88,22 +110,35 @@ func (l *List) UnmarshalJSON(bs []byte) error {
 	return nil
 }
 
-func (l *List) Append(val interface{}) error {
-	// NOTE: It could be an optimization here to serializing val and appending
-	// it directly to .raw if .decoded is nil. Seems like overkill.
-	if !l.ty.ListType.IsValid(val) {
+func (ml *MutableList) UnmarshalJSON(bs []byte) error {
+	if er := ml.List.UnmarshalJSON(bs); er != nil {
+		return er
+	}
+
+	if !ml.ty.IsValid(ml.decoded) {
+		ml.decoded = nil
 		return ErrSchema
 	}
 
-	_, er := l.decode()
+	return nil
+}
+
+func (ml *MutableList) Append(val interface{}) error {
+	// NOTE: It could be an optimization here to serializing val and appending
+	// it directly to .raw if .decoded is nil. Seems like overkill.
+	if !ml.ty.ListType.IsValid(val) {
+		return ErrSchema
+	}
+
+	_, er := ml.decode()
 	if er != nil {
 		return er
 	}
 
-	if len(l.decoded) == l.ty.MaxLen {
+	if len(ml.decoded) == ml.ty.MaxLen {
 		return ErrSchema
 	}
 
-	l.decoded = append(l.decoded, val)
+	ml.decoded = append(ml.decoded, val)
 	return nil
 }

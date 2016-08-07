@@ -154,3 +154,25 @@ func TestListAppendOOB(t *testing.T) {
 		t.Error("internal state corrupt")
 	}
 }
+
+func TestListCoerceGood(t *testing.T) {
+	l := List{
+		raw: json.RawMessage(`[1,2]`),
+	}
+	ty := NewListType(&TypeNumber, 2)
+
+	if _, er := l.As(ty); er != nil {
+		t.Fatal(er)
+	}
+}
+
+func TestListCoerceBad(t *testing.T) {
+	tb := Table{
+		raw: json.RawMessage(`[1,2]`),
+	}
+	ty := NewListType(&TypeString, 2)
+
+	if _, er := tb.As(ty); er == nil {
+		t.Fatal(er)
+	}
+}

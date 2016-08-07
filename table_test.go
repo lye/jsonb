@@ -121,3 +121,27 @@ func TestTableSet(t *testing.T) {
 		}
 	}
 }
+
+func TestTableCoerceGood(t *testing.T) {
+	tb := Table{
+		raw: json.RawMessage(`{"one":1}`),
+	}
+	ty := NewTableType(map[string]*Type{
+		"one": &TypeNumber,
+	})
+
+	if _, er := tb.As(ty); er != nil {
+		t.Fatal(er)
+	}
+}
+
+func TestTableCoerceBad(t *testing.T) {
+	tb := Table{
+		raw: json.RawMessage(`{"one":1}`),
+	}
+	ty := NewTableType(map[string]*Type{})
+
+	if _, er := tb.As(ty); er != ErrSchema {
+		t.Fatal(er)
+	}
+}

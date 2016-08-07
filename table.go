@@ -7,18 +7,24 @@ import (
 )
 
 type Table struct {
-	ty      *Type
 	raw     json.RawMessage
 	decoded map[string]interface{}
+}
+
+type MutableTable struct {
+	*Table
+	ty *Type
 }
 
 var _ sql.Scanner = &Table{}
 var _ driver.Valuer = &Table{}
 
-func NewTable(ty *Type) *Table {
-	return &Table{
-		ty:      ty,
-		decoded: map[string]interface{}{},
+func NewTable(ty *Type) *MutableTable {
+	return &MutableTable{
+		ty: ty,
+		Table: &Table{
+			decoded: make(map[string]interface{}),
+		},
 	}
 }
 
@@ -42,6 +48,26 @@ func (t *Table) encode() (_ json.RawMessage, er error) {
 	}
 
 	return t.raw, nil
+}
+
+func (t *Table) AsUnsafe(ty *Type) *MutableTable {
+	return &MutableTable{
+		Table: t,
+		ty:    ty,
+	}
+}
+
+func (t *Table) As(ty *Type) (*MutableTable, error) {
+	dec, er := t.decode()
+	if er != nil {
+		return nil, er
+	}
+
+	if !ty.IsValid(dec) {
+		return nil, ErrSchema
+	}
+
+	return t.AsUnsafe(ty), nil
 }
 
 func (t *Table) Scan(src interface{}) error {
@@ -80,22 +106,31 @@ func (t *Table) UnmarshalJSON(bs []byte) error {
 		return er
 	}
 
-	if !t.ty.IsValid(val) {
-		return ErrInvalidJsonType
-	}
-
 	// NOTE: See notes in List.UnmarshalJSON.
 	t.decoded = val
 	return nil
 }
 
-func (t *Table) Set(key string, val interface{}) error {
-	ty, ok := t.ty.Fields[key]
+func (mt *MutableTable) UnmarshalJSON(bs []byte) error {
+	if er := mt.Table.UnmarshalJSON(bs); er != nil {
+		return er
+	}
+
+	if !mt.ty.IsValid(mt.decoded) {
+		mt.decoded = nil
+		return ErrSchema
+	}
+
+	return nil
+}
+
+func (mt *MutableTable) Set(key string, val interface{}) error {
+	ty, ok := mt.ty.Fields[key]
 	if !ok || !ty.IsValid(val) {
 		return ErrSchema
 	}
 
-	dec, er := t.decode()
+	dec, er := mt.decode()
 	if er != nil {
 		return er
 	}
