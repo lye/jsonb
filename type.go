@@ -137,6 +137,21 @@ func (ty *Type) IsValid(val interface{}) bool {
 		if _, ok := val.(float64); ok {
 			return true
 		}
+		// While we're technically marshalling strictly to json, these
+		// easements make it less of a pain to interface with List/Table
+		// from the Go side. From most->least likely (via guess).
+		if _, ok := val.(int); ok {
+			return true
+		}
+		if _, ok := val.(int64); ok {
+			return true
+		}
+		if _, ok := val.(float32); ok {
+			return true
+		}
+		if _, ok := val.(int32); ok {
+			return true
+		}
 		return false
 
 	case KindString:

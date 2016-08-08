@@ -75,3 +75,49 @@ func TestTableWrongType(t *testing.T) {
 		t.Fatal("no error")
 	}
 }
+
+func TestTableSet(t *testing.T) {
+	ty := NewTableType(TableDef{
+		"k": &TypeString,
+		"v": &TypeNumber,
+	})
+	tb := NewTable(ty)
+
+	if er := tb.Set("k", "foo"); er != nil {
+		t.Error(er)
+	}
+	if er := tb.Set("k", "bar"); er != nil {
+		t.Error(er)
+	}
+	if er := tb.Set("k", 1); er == nil {
+		t.Error("expected error")
+	}
+	if v, ok := tb.decoded["k"]; !ok {
+		t.Error("missing key")
+	} else {
+		if v1, ok := v.(string); !ok {
+			t.Error("invalid type")
+		} else if v1 != "bar" {
+			t.Error("invalid value")
+		}
+	}
+
+	if er := tb.Set("v", 1); er != nil {
+		t.Error(er)
+	}
+	if er := tb.Set("v", 2); er != nil {
+		t.Error(er)
+	}
+	if er := tb.Set("v", "f"); er == nil {
+		t.Error("expected error")
+	}
+	if v, ok := tb.decoded["v"]; !ok {
+		t.Error("missing key")
+	} else {
+		if v1, ok := v.(int); !ok {
+			t.Error("invalid type")
+		} else if v1 != 2 {
+			t.Error("invalid value")
+		}
+	}
+}

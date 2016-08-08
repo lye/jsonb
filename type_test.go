@@ -44,12 +44,18 @@ func TestValidListNumber(t *testing.T) {
 	if !ty.IsValid(v) {
 		t.Error("should be valid")
 	}
+	if !ty.ListType.IsValid(1) {
+		t.Error("should be valid")
+	}
 }
 
 func TestInvalidListNumber(t *testing.T) {
 	v := rtJSON(t, []string{"one"})
 	ty := NewListType(&TypeNumber, 5)
 	if ty.IsValid(v) {
+		t.Error("should be invalid")
+	}
+	if ty.ListType.IsValid("one") {
 		t.Error("should be invalid")
 	}
 }
