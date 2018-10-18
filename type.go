@@ -81,9 +81,12 @@ func NewListType(ty *Type, maxLen int) *Type {
 }
 
 var (
-	TypeNumber = Type{Kind: KindNumber}
-	TypeString = Type{Kind: KindString}
-	TypeAny    = Type{Kind: KindAny}
+	TypeNumber     = Type{Kind: KindNumber}
+	TypeString     = Type{Kind: KindString}
+	TypeAny        = Type{Kind: KindAny}
+	TypeNumberList = NewListType(&TypeNumber, -1)
+	TypeStringList = NewListType(&TypeString, -1)
+	TypeAnyList    = NewListType(&TypeAny, -1)
 )
 
 func (ty *Type) isValidList(val interface{}) bool {
