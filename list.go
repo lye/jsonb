@@ -95,7 +95,12 @@ func (l *List) Scan(src interface{}) error {
 		return ErrInvalidJsonType
 	}
 
-	l.raw = json.RawMessage(bs)
+	// NB: The buffer *MUST* be copied since it's re-used by pq
+	// and will be filled with garbage.
+	newSlice := make([]byte, len(bs))
+	copy(newSlice, bs)
+
+	l.raw = json.RawMessage(newSlice)
 	l.decoded = nil
 	return nil
 }

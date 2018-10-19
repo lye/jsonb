@@ -85,7 +85,12 @@ func (t *Table) Scan(src interface{}) error {
 		return ErrInvalidJsonType
 	}
 
-	t.raw = json.RawMessage(bs)
+	// NB: The buffer *MUST* be copied since it's re-used by pq
+	// and will be filled with garbage.
+	newSlice := make([]byte, len(bs))
+	copy(newSlice, bs)
+
+	t.raw = json.RawMessage(newSlice)
 	t.decoded = nil
 	return nil
 }
