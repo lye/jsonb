@@ -77,7 +77,7 @@ func TestListWrongType(t *testing.T) {
 }
 
 func TestNewList(t *testing.T) {
-	ty := NewListType(&TypeNumber, 10)
+	ty := NewListType(TypeNumber, 10)
 	l := NewList(ty)
 
 	bs, er := json.Marshal(l)
@@ -91,7 +91,7 @@ func TestNewList(t *testing.T) {
 }
 
 func TestNumberListAppend(t *testing.T) {
-	ty := NewListType(&TypeNumber, 10)
+	ty := NewListType(TypeNumber, 10)
 	l := NewList(ty)
 
 	if er := l.Append(0); er != nil {
@@ -140,7 +140,7 @@ func TestNumberListAppend(t *testing.T) {
 }
 
 func TestListAppendOOB(t *testing.T) {
-	ty := NewListType(&TypeNumber, 1)
+	ty := NewListType(TypeNumber, 1)
 	l := NewList(ty)
 
 	if er := l.Append(0); er != nil {
@@ -159,7 +159,7 @@ func TestListCoerceGood(t *testing.T) {
 	l := List{
 		raw: json.RawMessage(`[1,2]`),
 	}
-	ty := NewListType(&TypeNumber, 2)
+	ty := NewListType(TypeNumber, 2)
 
 	if _, er := l.As(ty); er != nil {
 		t.Fatal(er)
@@ -170,7 +170,7 @@ func TestListCoerceBad(t *testing.T) {
 	tb := Table{
 		raw: json.RawMessage(`[1,2]`),
 	}
-	ty := NewListType(&TypeString, 2)
+	ty := NewListType(TypeString, 2)
 
 	if _, er := tb.As(ty); er == nil {
 		t.Fatal(er)

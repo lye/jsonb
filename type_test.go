@@ -40,7 +40,7 @@ func TestKindMarshal(t *testing.T) {
 
 func TestValidListNumber(t *testing.T) {
 	v := rtJSON(t, []int{1, 2, 3, 4})
-	ty := NewListType(&TypeNumber, 4)
+	ty := NewListType(TypeNumber, 4)
 	if !ty.IsValid(v) {
 		t.Error("should be valid")
 	}
@@ -51,7 +51,7 @@ func TestValidListNumber(t *testing.T) {
 
 func TestInvalidListNumber(t *testing.T) {
 	v := rtJSON(t, []string{"one"})
-	ty := NewListType(&TypeNumber, 5)
+	ty := NewListType(TypeNumber, 5)
 	if ty.IsValid(v) {
 		t.Error("should be invalid")
 	}
@@ -62,7 +62,7 @@ func TestInvalidListNumber(t *testing.T) {
 
 func TestListMaxLength(t *testing.T) {
 	v := rtJSON(t, []int{1, 2, 3, 4})
-	ty := NewListType(&TypeNumber, 3)
+	ty := NewListType(TypeNumber, 3)
 	if ty.IsValid(v) {
 		t.Error("should be invalid")
 	}
@@ -83,7 +83,7 @@ func TestStringMaxLength(t *testing.T) {
 
 func TestValidListString(t *testing.T) {
 	v := rtJSON(t, []string{"one", "two"})
-	ty := NewListType(&TypeString, 2)
+	ty := NewListType(TypeString, 2)
 	if !ty.IsValid(v) {
 		t.Error("should be valid")
 	}
@@ -96,9 +96,9 @@ func TestValidTable1(t *testing.T) {
 		"five":  []int{1, 2, 3},
 	})
 	ty := NewTableType(map[string]*Type{
-		"one":   &TypeString,
-		"three": &TypeNumber,
-		"five":  NewListType(&TypeNumber, 3),
+		"one":   TypeString,
+		"three": TypeNumber,
+		"five":  NewListType(TypeNumber, 3),
 	})
 	if !ty.IsValid(v) {
 		t.Error("should be valid")
@@ -115,7 +115,7 @@ func TestListTable(t *testing.T) {
 		},
 	})
 	ty := NewTableType(map[string]*Type{
-		"v": &TypeNumber,
+		"v": TypeNumber,
 	})
 	ty = NewListType(ty, 2)
 

@@ -78,8 +78,8 @@ func TestTableWrongType(t *testing.T) {
 
 func TestTableSet(t *testing.T) {
 	ty := NewTableType(TableDef{
-		"k": &TypeString,
-		"v": &TypeNumber,
+		"k": TypeString,
+		"v": TypeNumber,
 	})
 	tb := NewTable(ty)
 
@@ -127,7 +127,7 @@ func TestTableCoerceGood(t *testing.T) {
 		raw: json.RawMessage(`{"one":1}`),
 	}
 	ty := NewTableType(map[string]*Type{
-		"one": &TypeNumber,
+		"one": TypeNumber,
 	})
 
 	if _, er := tb.As(ty); er != nil {

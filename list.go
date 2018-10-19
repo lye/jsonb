@@ -6,23 +6,34 @@ import (
 	"encoding/json"
 )
 
+// List is an abstraction around a JSON array. It provides read-only access
+// to a blob of JSON; the blob is unmarshalled to an []interface{} on demand.
+// To write values to a List, first cast it to a typed MutableList via As,
+// then use the MutableList instead.
+//
+// Lists are basically for receiving data from PostgreSQL, which may or may
+// not have the structure you want. Marshalling a List to JSON is basically
+// a no-op, as the JSON is already cached.
 type List struct {
 	raw     json.RawMessage
 	decoded []interface{}
 }
 
+// MutableList is a type-checked list that can have values appended to it
+// via the Append method. Values are type-checked against the type definition.
 type MutableList struct {
-	*List
+	List
 	ty *Type
 }
 
 var _ sql.Scanner = &List{}
 var _ driver.Valuer = &List{}
 
+// NewList returns a newly constructed MutableList with the given type.
 func NewList(ty *Type) *MutableList {
 	return &MutableList{
 		ty: ty,
-		List: &List{
+		List: List{
 			decoded: []interface{}{},
 		},
 	}
@@ -50,13 +61,16 @@ func (l *List) encode() (_ json.RawMessage, er error) {
 	return l.raw, nil
 }
 
+// AsUnsafe creates a MutableList from a List, but does no type checking.
 func (l *List) AsUnsafe(ty *Type) *MutableList {
 	return &MutableList{
-		List: l,
+		List: *l,
 		ty:   ty,
 	}
 }
 
+// As creates a MutableList from a List, and type-checks every value to ensure
+// that it's what's expected.
 func (l *List) As(ty *Type) (*MutableList, error) {
 	dec, er := l.decode()
 	if er != nil {
@@ -123,6 +137,8 @@ func (ml *MutableList) UnmarshalJSON(bs []byte) error {
 	return nil
 }
 
+// Append inserts val onto the end of the MutableList. It returns an error if
+// there's a type issue.
 func (ml *MutableList) Append(val interface{}) error {
 	// NOTE: It could be an optimization here to serializing val and appending
 	// it directly to .raw if .decoded is nil. Seems like overkill.
@@ -141,4 +157,11 @@ func (ml *MutableList) Append(val interface{}) error {
 
 	ml.decoded = append(ml.decoded, val)
 	return nil
+}
+
+// Values returns the underlying Go values for the list as a []interface{}.
+// Note that, if the MutableList is created with AsUnsafe, the values may have
+// arbitrary types.
+func (ml *MutableList) Values() []interface{} {
+	return ml.decoded
 }

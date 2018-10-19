@@ -7,6 +7,7 @@ const (
 	KindList
 	KindNumber
 	KindString
+	KindBool
 	KindAny
 )
 
@@ -15,6 +16,7 @@ var kindStrings = map[Kind]string{
 	KindList:   `"list"`,
 	KindNumber: `"number"`,
 	KindString: `"string"`,
+	KindBool:   `"bool"`,
 	KindAny:    `"any"`,
 }
 
@@ -40,9 +42,16 @@ func (k *Kind) UnmarshalJSON(bs []byte) error {
 	return ErrNoSuchKind
 }
 
+// TableDef is a field name-to-value type mapping. It's used for specifying
+// an object's field types statically.
 type TableDef map[string]*Type
 
+// Type is a static type definition that declares the expected types encoded
+// by a JSON blob. Types should be statically constructed and just used via
+// pointer. There are a handful of common pre-defined types.
 type Type struct {
+	// Kind is the JSON primitive kind. For complex types (e.g. lists/tables)
+	// the interior type is defined by ListType/Fields, respectively.
 	Kind Kind
 
 	// Set only when Kind is KindList. Contains the list subtype.
@@ -57,6 +66,9 @@ type Type struct {
 	Fields TableDef
 }
 
+// NewStringType is a helper method that returns a Type for a string with
+// a given max length. If you don't have a max length, just use TypeString
+// instead.
 func NewStringType(maxLen int) *Type {
 	return &Type{
 		Kind:   KindString,
@@ -64,6 +76,8 @@ func NewStringType(maxLen int) *Type {
 	}
 }
 
+// NewTableType is a helper method that returns a table Type with the given
+// fields.
 func NewTableType(fields TableDef) *Type {
 	return &Type{
 		Kind:   KindTable,
@@ -71,6 +85,10 @@ func NewTableType(fields TableDef) *Type {
 	}
 }
 
+// NewListType is a helper method that returns a new list Type with the
+// given type and max length. If maxLen is <=0, the list is unbounded. For
+// homogenous primitive lists, consider using one of the existing list
+// definitions (e.g. TypeNumberList).
 func NewListType(ty *Type, maxLen int) *Type {
 	return &Type{
 		Kind:     KindList,
@@ -81,12 +99,14 @@ func NewListType(ty *Type, maxLen int) *Type {
 }
 
 var (
-	TypeNumber     = Type{Kind: KindNumber}
-	TypeString     = Type{Kind: KindString}
-	TypeAny        = Type{Kind: KindAny}
-	TypeNumberList = NewListType(&TypeNumber, -1)
-	TypeStringList = NewListType(&TypeString, -1)
-	TypeAnyList    = NewListType(&TypeAny, -1)
+	TypeNumber     = &Type{Kind: KindNumber}
+	TypeString     = &Type{Kind: KindString}
+	TypeBool       = &Type{Kind: KindBool}
+	TypeAny        = &Type{Kind: KindAny}
+	TypeNumberList = NewListType(TypeNumber, -1)
+	TypeStringList = NewListType(TypeString, -1)
+	TypeBoolList   = NewListType(TypeBool, -1)
+	TypeAnyList    = NewListType(TypeAny, -1)
 )
 
 func (ty *Type) isValidList(val interface{}) bool {
@@ -160,6 +180,10 @@ func (ty *Type) IsValid(val interface{}) bool {
 	case KindString:
 		s, ok := val.(string)
 		return ok && (ty.MaxLen <= 0 || ty.MaxLen >= len(s))
+
+	case KindBool:
+		_, ok := val.(bool)
+		return ok
 
 	case KindAny:
 		return true
