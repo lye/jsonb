@@ -23,4 +23,10 @@ var (
 	// results -- some rudimentary checking is done (currently, XXX that
 	// seems like it might cause data to be locked in the db).
 	ErrInvalidJsonType = errors.New("jsonb: invalid json type")
+
+	// ErrUnexpectedType is returned when stored jsonb values are pulled
+	// out as Go types and there isn't a valid conversion (e.g., the
+	// type constraints don't match the requested type, or the data
+	// is corrupt (e.g. via List.AsUnsafe)).
+	ErrUnexpectedType = errors.New("jsonb: unexpected type")
 )

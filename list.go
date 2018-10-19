@@ -165,3 +165,40 @@ func (ml *MutableList) Append(val interface{}) error {
 func (ml *MutableList) Values() []interface{} {
 	return ml.decoded
 }
+
+// Int64Values returns the list as an []int64. The list must only contain
+// numeric values. Non-integer numeric values are truncated.
+func (ml *MutableList) Int64Values() (out []int64, er error) {
+	for _, ival := range ml.decoded {
+		switch val := ival.(type) {
+		case int:
+			out = append(out, int64(val))
+		case int32:
+			out = append(out, int64(val))
+		case int64:
+			out = append(out, int64(val))
+		case float64:
+			out = append(out, int64(val))
+			// XXX: Probably need more cases here.
+		default:
+			return nil, ErrUnexpectedType
+		}
+	}
+
+	return
+}
+
+// StringValues returns the list as a []string.
+func (ml *MutableList) StringValues() (out []string, er error) {
+	for _, ival := range ml.decoded {
+		switch val := ival.(type) {
+		case string:
+			out = append(out, val)
+			// XXX: Can technically convert non-strings to strings.
+		default:
+			return nil, ErrUnexpectedType
+		}
+	}
+
+	return
+}
