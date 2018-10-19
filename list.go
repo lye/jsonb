@@ -100,7 +100,7 @@ func (l *List) Scan(src interface{}) error {
 	return nil
 }
 
-func (l *List) Value() (driver.Value, error) {
+func (l List) Value() (driver.Value, error) {
 	raw, er := l.encode()
 	return []byte(raw), er
 }
