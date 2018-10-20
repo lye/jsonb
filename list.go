@@ -63,6 +63,11 @@ func (l *List) encode() (_ json.RawMessage, er error) {
 
 // AsUnsafe creates a MutableList from a List, but does no type checking.
 func (l *List) AsUnsafe(ty *Type) *MutableList {
+	_, er := l.decode()
+	if er != nil {
+		panic(er)
+	}
+
 	return &MutableList{
 		List: *l,
 		ty:   ty,

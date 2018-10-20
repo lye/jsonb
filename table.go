@@ -51,6 +51,11 @@ func (t *Table) encode() (_ json.RawMessage, er error) {
 }
 
 func (t *Table) AsUnsafe(ty *Type) *MutableTable {
+	_, er := t.decode()
+	if er != nil {
+		panic(er)
+	}
+
 	return &MutableTable{
 		Table: t,
 		ty:    ty,
